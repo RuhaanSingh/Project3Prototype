@@ -1,0 +1,11 @@
+Project 3 Spec-2.docx
+*.class
+out/
+bin/
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
