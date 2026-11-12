@@ -62,7 +62,11 @@ public class Card
      */
     public boolean matches(Card other)
     {
-        throw new UnsupportedOperationException("Not written yet");
+        if (other == null)
+        {
+            return false;
+        }
+        return color == other.color || number == other.number;
     }
 
     /**
@@ -73,6 +77,6 @@ public class Card
     @Override
     public String toString()
     {
-        throw new UnsupportedOperationException("Not written yet");
+        return color + " " + number;
     }
 }
