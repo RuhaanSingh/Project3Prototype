@@ -85,7 +85,7 @@ public class GameSnapshot
      */
     public List<Card> getCurrentHand()
     {
-        throw new UnsupportedOperationException("Not written yet");
+        return currentHand;
     }
 
     /**
@@ -95,6 +95,6 @@ public class GameSnapshot
      */
     public String getWinnerName()
     {
-        throw new UnsupportedOperationException("Not written yet");
+        return winnerName;
     }
 }
