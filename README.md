@@ -10,43 +10,50 @@ Group: Raul, Ruhaan, Toby
 
 ## How to run
 
-All source files are in `src/` .
+Source files are in `src/turnabout/`, split into three packages:
+`turnabout.model`, `turnabout.view`, and `turnabout.controller`.
 
 **Compile**
 
 ```
-javac -d out src/*.java
+javac -d out $(find src -name "*.java")
 ```
 
 **Play the game (thin console view)**
 
 ```
-java -cp out TurnaboutMain
+java -cp out turnabout.controller.TurnaboutMain
 ```
 
 Enter the number of players and their names. On your turn, type a card number
 to play it, or `D` to draw.
 
+**Run the model with no view (tests)**
 
+The tests are in `test/turnabout/model/` and use the course's `student.TestCase`
+(from `student.jar`). Run them from the IDE, or from the command line with
+`student.jar` on the classpath:
 
 ```
-javac -d out -cp junit-platform-console-standalone.jar src/*.java test/*.java
-java -jar junit-platform-console-standalone.jar -cp out --scan-class-path
+javac -d out -cp student.jar $(find src test -name "*.java")
+java -cp out:student.jar org.junit.runner.JUnitCore turnabout.model.LinkedQueueTest turnabout.model.DeckTest turnabout.model.PlayerTest turnabout.model.GameModelTest
 ```
 
-The tests build a `GameModel` directly, register a recording `GameListener`,
+There are 41 tests across `LinkedQueueTest`, `DeckTest`, `PlayerTest`, and
+`GameModelTest`. The tests build a `GameModel` directly, register a recording `GameListener`,
 and never create a `ConsoleView`. This shows the model runs on its own.
 
 ## Project structure
 
-| Role | Classes |
+| Package | Classes |
 | --- | --- |
-| Model | `LinkedQueue`, `Card`, `CardColor`, `Deck`, `Player`, `GameModel`, `GameSnapshot`, `MoveResult`, `GameListener` |
-| View | `ConsoleView` |
-| Controller | `GameController`, `TurnaboutMain` |
-| Tests | [test file names] |
+| `turnabout.model` | `LinkedQueue`, `Card`, `CardColor`, `Deck`, `Player`, `GameModel`, `GameSnapshot`, `MoveResult`, `GameListener` |
+| `turnabout.view` | `ConsoleView` |
+| `turnabout.controller` | `GameController`, `TurnaboutMain` |
+| Tests (`test/turnabout/model`) | `LinkedQueueTest`, `DeckTest`, `PlayerTest`, `GameModelTest` |
 
-The model never imports or calls the view. The view learns about changes
+Nothing in `turnabout.model` imports `turnabout.view` or
+`turnabout.controller`, so the model never depends on the view. The view learns about changes
 through `GameListener.gameChanged(GameSnapshot)`, and only ever sees a
 read-only `GameSnapshot`.
 
@@ -54,26 +61,35 @@ read-only `GameSnapshot`.
 
 ### What changed from our specification?
 
-- **No packages.** The spec didn't name packages; the group put every file
-  directly in `src/` so the classes can see each other without imports.
-- **`Card` gained `getColor()` and `getNumber()`.** The view needs them to
-  print a card. Card also has `equals`, `hashCode`, and a debug-only
-  `toString`; how cards look on screen is still the view's decision.
-- **`GameSnapshot` gained `isGameOver()`**, a shortcut for
-  `getWinnerName() != null`. Its constructor is package-private (no `public`), so
-  only `GameModel` builds snapshots.
+- **Packages.** The spec didn't name packages. We split the code into
+  `turnabout.model`, `turnabout.view`, and `turnabout.controller` so the
+  model/view line is visible in the imports.
+- **`Card` gained `getColor()` and `getNumber()`** so the view can print a card.
+- **`Card.matches(null)` returns false** instead of throwing
+  IllegalArgumentException as the spec said. The model never passes null, so
+  this doesn't change how the game plays.
+- **`GameSnapshot` getters are `getCurrentName()` and `getNextName()`**
+  instead of `getCurrentPlayerName()` / `getNextPlayerName()`, and its
+  constructor rejects null values.
+- **`GameModel` gained `isValidPlayerCount(int)`, `getPlayerCount()`,
+  `isGameOver()`, and `getWinnerName()`.** The controller needs the first two
+  to re-prompt for the player count and names without repeating the rule; the
+  model still owns the rule.
+- **`ConsoleView` reads with a `Scanner` and `readLine(String prompt)`**
+  instead of a `BufferedReader` and `readLine()`. Taking a prompt keeps the
+  question and the typing on the same line.
 - **`Deck.topCard()` returns null before the first discard.** This can't
   happen during a game, because `startGame()` always flips a starting card.
-- **Model method signatures are otherwise the same as Section 5 of the spec.**
-- [Ruhaan: any changes to ConsoleView from the spec, and why]
-- [Toby: any changes to GameController, TurnaboutMain, or the test plan, and why]
+- **Tests:** the plan in Section 7 is covered for `LinkedQueue`, `Deck`,
+  `Player`, and `GameModel`. `Card` has no tests yet (see below).
+
 
 ### Did the model really stand alone?
 
 Yes. The model only knows the `GameListener` interface. Nothing in the model
 prints, reads input, or refers to `ConsoleView` or `GameController`. Nothing
 had to move across the model/view line to make the game run.
-[Edit if your experience joining the parts was different.]
+
 
 ### What happened to our unknowns?
 
@@ -88,9 +104,15 @@ had to move across the model/view line to make the game run.
 ### What doesn't work yet?
 
 - The Reverse card is not built yet (planned for Deliverable 4).
-- [Any MVP feature that is missing or buggy]
-- [Any bad-input case from the spec that isn't handled yet]
-- [Any test that is missing or failing]
+- After a move, the result message ("Card played.") prints below the next
+  player's board instead of above it. The model notifies the view during
+  `playCard`/`drawCard`, before the controller shows its message.
+- **No tests for `Card` yet.** Section 7 of the spec planned tests for the
+  `Card` constructor and `Card.matches`.
+- All 41 existing tests pass. The MVP path works: games with 2, 4, and 6
+  players play to a winner, and every bad-input case from the spec is
+  handled (bad player counts, blank/duplicate/long names, letters, card
+  numbers outside the hand, illegal plays, and closing input mid-game).
 
 ## Next Steps
 
@@ -98,10 +120,11 @@ had to move across the model/view line to make the game run.
 
 In order:
 
-1. [Remaining MVP fix or feature]
-2. [Remaining MVP fix or feature]
-3. Play three full games (2, 4, and 6 players) and try every bad-input case
-   from Section 6 of the spec.
+The MVP plays from start to winner, so what's left is polish:
+
+1. Show the result message ("Card played.") before the next player's board.
+2. Add `CardTest` for the constructor and `matches()`.
+3. Play-test again after both changes.
 
 ### Our change feature: the Reverse card
 
@@ -135,7 +158,7 @@ If any of these do change, we will explain why in Deliverable 4.
 
 ### Which stretch goals will we attempt?
 
-[Group to confirm before submitting]
+
 
 - **Committing to:** Skip card. It reuses the turn-passing code, so it is
   small once Reverse works.
@@ -160,9 +183,10 @@ If any of these do change, we will explain why in Deliverable 4.
 | --- | --- |
 | `LinkedQueue.reverse()` and the Reverse rule in `GameModel` | Raul |
 | Reverse cards in `Deck` | Raul |
-| Reverse in `Card` | [owner of Card] |
+| Reverse in `Card` | Ruhaan |
 | Printing Reverse cards in `ConsoleView` | Ruhaan |
 | New tests listed above | Toby |
+| Remaining MVP fixes | Raul |
 
 ## Attribution
 
@@ -170,19 +194,22 @@ One row per class and test file.
 
 | File | Who | How |
 | --- | --- | --- |
-| `LinkedQueue.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude |
-| `Player.java` | Raul | GenAI-assisted; Did the version originaly myself and then revied with claude  |
-| `Deck.java` | Raul | GenAI-assisted; Did the version originaly myself and then revied with claude  |
-| `GameModel.java` | Raul | GenAI-assisted; Did the version originaly myself and then revied with claude  |
-| `MoveResult.java` | Raul | GenAI-assisted; Did the version originaly myself and then revied with claude  |
-| `GameListener.java` | Raul | GenAI-assisted; Did the version originaly myself and then revied with claude  |
-| `CardColor.java` | Ruhaan | [Wrote / GenAI-assisted / ...] |
-| `Card.java` | [name] | [how] |
-| `GameSnapshot.java` | [name] | [how] |
+| `LinkedQueue.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `Player.java` | Raul |GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `Deck.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `GameModel.java` | Raul, Ruhaan | GenAI-assisted: Did the version originaly myself (Raul) and then revied with claude. Ruhaan added `getPlayerCount`, `isValidPlayerCount`, `isGameOver`, `getWinnerName`|
+| `MoveResult.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `GameListener.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `CardColor.java` | Ruhaan | [how] |
+| `Card.java` | Ruhaan | [how] |
+| `GameSnapshot.java` | Ruhaan | [how] |
 | `ConsoleView.java` | Ruhaan | [how] |
 | `GameController.java` | Toby | [how] |
 | `TurnaboutMain.java` | Toby | [how] |
-| [test file] | Toby | [how] |
+| `LinkedQueueTest.java` | Toby | [how] |
+| `DeckTest.java` | Toby | [how] |
+| `PlayerTest.java` | Toby | [how] |
+| `GameModelTest.java` | Toby | [how] |
 | `README.md` | [names] | Drafted with GenAI (Claude); [who filled in and reviewed it] |
 
 ## GenAI note
