@@ -200,16 +200,16 @@ One row per class and test file.
 | `GameModel.java` | Raul, Ruhaan | GenAI-assisted: Did the version originaly myself (Raul) and then revied with claude. Ruhaan added `getPlayerCount`, `isValidPlayerCount`, `isGameOver`, `getWinnerName`|
 | `MoveResult.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
 | `GameListener.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `CardColor.java` | Ruhaan | [how] |
-| `Card.java` | Ruhaan | [how] |
-| `GameSnapshot.java` | Ruhaan | [how] |
-| `ConsoleView.java` | Ruhaan | [how] |
-| `GameController.java` | Toby | [how] |
-| `TurnaboutMain.java` | Toby | [how] |
-| `LinkedQueueTest.java` | Toby | [how] |
-| `DeckTest.java` | Toby | [how] |
-| `PlayerTest.java` | Toby | [how] |
-| `GameModelTest.java` | Toby | [how] |
+| `CardColor.java` | Ruhaan | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `Card.java` | Ruhaan | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `GameSnapshot.java` | Ruhaan |GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `ConsoleView.java` | Ruhaan | GenAI-assisted: Did the version originaly myself and then revied with claude |
+| `GameController.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `TurnaboutMain.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `LinkedQueueTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `DeckTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `PlayerTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `GameModelTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
 | `README.md` | Raul | Drafted with GenAI (Claude);|
 
 ## GenAI note
