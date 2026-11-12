@@ -210,7 +210,7 @@ One row per class and test file.
 | `DeckTest.java` | Toby | [how] |
 | `PlayerTest.java` | Toby | [how] |
 | `GameModelTest.java` | Toby | [how] |
-| `README.md` | [names] | Drafted with GenAI (Claude); [who filled in and reviewed it] |
+| `README.md` | Raul | Drafted with GenAI (Claude);|
 
 ## GenAI note
 
