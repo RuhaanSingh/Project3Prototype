@@ -168,6 +168,26 @@ public class GameModel {
         return active;
     }
 
+    /** True if count is between MIN_PLAYERS and MAX_PLAYERS, inclusive. */
+    public static boolean isValidPlayerCount(int count) {
+        return count >= MIN_PLAYERS && count <= MAX_PLAYERS;
+    }
+
+    /** How many players have been added so far. */
+    public int getPlayerCount() {
+        return players.size();
+    }
+
+    /** True once someone has won. */
+    public boolean isGameOver() {
+        return winnerName != null;
+    }
+
+    /** The winner's name, or null if nobody has won yet. */
+    public String getWinnerName() {
+        return winnerName;
+    }
+
     // ---- private helpers ----
 
     private boolean hasStarted() {
