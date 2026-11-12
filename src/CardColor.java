@@ -1,3 +1,5 @@
+package turnabout.model;
+
 /**
  * The four colors a Card can be.
  *
