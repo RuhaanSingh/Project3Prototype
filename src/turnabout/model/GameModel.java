@@ -101,7 +101,10 @@ public class GameModel {
      * Plays the card at cardIndex (0-based) from playerName's hand.
      * Checks, in order: GAME_NOT_ACTIVE, NOT_YOUR_TURN, BAD_INDEX, ILLEGAL_PLAY.
      * A rejected move changes nothing and sends no notification.
-     * @return PLAYED, WON, or the reason it was rejected
+     * A Reverse card flips the order of the waiting players before the turn
+     * passes, so the player who went before goes next. If it is the player's
+     * last card, they win and the order is not changed.
+     * @return PLAYED, REVERSED, WON, or the reason it was rejected
      */
     public MoveResult playCard(String playerName, int cardIndex) {
         if (!active) {
@@ -118,12 +121,19 @@ public class GameModel {
             return MoveResult.ILLEGAL_PLAY;
         }
 
-        deck.discard(current.removeCard(cardIndex));
+        Card played = current.removeCard(cardIndex);
+        deck.discard(played);
         if (current.getHand().isEmpty()) {
             winnerName = current.getName();
             active = false;
             notifyListeners();
             return MoveResult.WON;
+        }
+        if (played.isReverse()) {
+            waiting.reverse();     // 0 or 1 waiting (2 players): no change
+            advanceTurn();
+            notifyListeners();
+            return MoveResult.REVERSED;
         }
         advanceTurn();
         notifyListeners();
