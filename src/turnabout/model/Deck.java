@@ -12,12 +12,18 @@ import java.util.Random;
  * discarding are O(1).
  */
 public class Deck {
+    /** Reverse cards of each color in the standard deck. */
+    public static final int REVERSES_PER_COLOR = 1;
+    /** Cards in the standard deck: 40 number cards plus 4 Reverse cards. */
+    public static final int STANDARD_SIZE = 40 + 4 * REVERSES_PER_COLOR;
+
     private final List<Card> drawPile = new ArrayList<>();
     private final List<Card> discardPile = new ArrayList<>();
     private final Random rng;
 
     /**
-     * Builds the standard 40-card deck (4 colors x numbers 0-9) and shuffles it.
+     * Builds the standard 44-card deck (4 colors x numbers 0-9, plus one
+     * Reverse card of each color) and shuffles it. Same as standard(rng).
      * @throws IllegalArgumentException if rng is null
      */
     public Deck(Random rng) {
@@ -29,8 +35,19 @@ public class Deck {
             for (int n = 0; n <= 9; n++) {
                 drawPile.add(new Card(color, n));
             }
+            for (int r = 0; r < REVERSES_PER_COLOR; r++) {
+                drawPile.add(Card.reverse(color));
+            }
         }
         Collections.shuffle(drawPile, rng);
+    }
+
+    /**
+     * The standard shuffled 44-card deck.
+     * @throws IllegalArgumentException if rng is null
+     */
+    public static Deck standard(Random rng) {
+        return new Deck(rng);
     }
 
     /**
