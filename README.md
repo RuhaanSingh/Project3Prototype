@@ -11,37 +11,48 @@ Group: Raul, Ruhaan, Toby
 ## How to run
 
 Source files are in `src/turnabout/`, split into three packages:
-`turnabout.model`, `turnabout.view`, and `turnabout.controller`.
+`turnabout.model`, `turnabout.view`, and `turnabout.controller`. Tests are in
+`test/turnabout/`. All commands below are run from the project folder (the
+one with this README) and were checked with Java 17 on macOS.
 
-**Compile**
+**Compile and play the game**
 
 ```
 javac -d out $(find src -name "*.java")
-```
-
-**Play the game (thin console view)**
-
-```
 java -cp out turnabout.controller.TurnaboutMain
 ```
 
 Enter the number of players and their names. On your turn, type a card number
-to play it, or `D` to draw.
+to play it, or `D` to draw. Closing input (Ctrl+D) ends the game.
 
-**Run the model with no view (tests)**
+**Compile and run the tests**
 
-The tests are in `test/turnabout/model/` and use the course's `student.TestCase`
-(from `student.jar`). Run them from the IDE, or from the command line with
-`student.jar` on the classpath:
+The tests use the course's `student.TestCase`, which comes in `student.jar`
+(it also contains JUnit 4). Copy `student.jar` into the project folder first
+(it is not committed), then:
 
 ```
 javac -d out -cp student.jar $(find src test -name "*.java")
-java -cp out:student.jar org.junit.runner.JUnitCore turnabout.model.LinkedQueueTest turnabout.model.DeckTest turnabout.model.PlayerTest turnabout.model.GameModelTest
+java -cp out:student.jar org.junit.runner.JUnitCore turnabout.model.LinkedQueueTest turnabout.model.DeckTest turnabout.model.PlayerTest turnabout.model.GameModelTest turnabout.model.CardTest turnabout.model.GameSnapshotTest turnabout.view.ConsoleViewTest
 ```
 
-There are 41 tests across `LinkedQueueTest`, `DeckTest`, `PlayerTest`, and
-`GameModelTest`. The tests build a `GameModel` directly, register a recording `GameListener`,
+This runs 73 tests and ends with `OK (73 tests)`. The `WARNING: ...
+setSecurityManager` lines come from `student.jar` on newer Java and can be
+ignored. On Windows, use `;` instead of `:` in the `-cp` value.
+
+The tests build a `GameModel` directly, register a recording `GameListener`,
 and never create a `ConsoleView`. This shows the model runs on its own.
+`ConsoleViewTest` drives the view with a `Scanner` over a fixed string and a
+`PrintStream` over a byte buffer.
+
+**Tests waiting on `LinkedStack` and `LinkedQueue.reverse()`**
+
+`test-pending/turnabout/model/` holds `LinkedStackTest` and
+`LinkedQueueReverseTest`. They are written against the contract but do not
+compile until `LinkedStack` and `LinkedQueue.reverse()` are pushed. Once they
+are, move both files into `test/turnabout/model/` and add
+`turnabout.model.LinkedStackTest turnabout.model.LinkedQueueReverseTest` to
+the end of the run command above.
 
 ## Project structure
 
@@ -50,7 +61,9 @@ and never create a `ConsoleView`. This shows the model runs on its own.
 | `turnabout.model` | `LinkedQueue`, `Card`, `CardColor`, `Deck`, `Player`, `GameModel`, `GameSnapshot`, `MoveResult`, `GameListener` |
 | `turnabout.view` | `ConsoleView` |
 | `turnabout.controller` | `GameController`, `TurnaboutMain` |
-| Tests (`test/turnabout/model`) | `LinkedQueueTest`, `DeckTest`, `PlayerTest`, `GameModelTest` |
+| Tests (`test/turnabout/model`) | `LinkedQueueTest`, `DeckTest`, `PlayerTest`, `GameModelTest`, `CardTest`, `GameSnapshotTest` |
+| Tests (`test/turnabout/view`) | `ConsoleViewTest` |
+| Pending tests (`test-pending/turnabout/model`) | `LinkedStackTest`, `LinkedQueueReverseTest` |
 
 Nothing in `turnabout.model` imports `turnabout.view` or
 `turnabout.controller`, so the model never depends on the view. The view learns about changes
@@ -190,7 +203,7 @@ If any of these do change, we will explain why in Deliverable 4.
 
 ## Attribution
 
-One row per class and test file.
+One row per class and test file. Each owner fills in their own How column.
 
 | File | Who | How |
 | --- | --- | --- |
@@ -200,22 +213,27 @@ One row per class and test file.
 | `GameModel.java` | Raul, Ruhaan | GenAI-assisted: Did the version originaly myself (Raul) and then revied with claude. Ruhaan added `getPlayerCount`, `isValidPlayerCount`, `isGameOver`, `getWinnerName`|
 | `MoveResult.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
 | `GameListener.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `CardColor.java` | Ruhaan | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `Card.java` | Ruhaan | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `GameSnapshot.java` | Ruhaan |GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `ConsoleView.java` | Ruhaan | GenAI-assisted: Did the version originaly myself and then revied with claude |
-| `GameController.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `TurnaboutMain.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `LinkedQueueTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `DeckTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `PlayerTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `GameModelTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `README.md` | Raul | Drafted with GenAI (Claude);|
+| `CardColor.java` | Ruhaan | Wrote fully myself. |
+| `Card.java` | Ruhaan | GenAI-assisted. Mostly finished myself, then had AI debug one function I couldn't get to work. The Reverse card (`reverse`, `isReverse`, the Reverse `matches` rules, `toString`) was added with Claude Code from our contract. |
+| `GameSnapshot.java` | Ruhaan | GenAI-assisted. Wrote myself, then had AI check it. Something I did didn't match what we agreed, so AI helped fix it. |
+| `ConsoleView.java` | Ruhaan | GenAI-assisted. Did the version originally myself, then fixed it up with Claude. Checked with Claude Code against the real model and controller for Deliverable 4: no changes needed. |
+| `GameController.java` | Toby | [owner fills in] |
+| `TurnaboutMain.java` | Toby | [owner fills in] |
+| `LinkedQueueTest.java` | Toby | [owner fills in] |
+| `DeckTest.java` | Toby | [owner fills in] |
+| `PlayerTest.java` | Toby | [owner fills in] |
+| `GameModelTest.java` | Toby | [owner fills in] |
+| `CardTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
+| `GameSnapshotTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
+| `ConsoleViewTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
+| `LinkedStackTest.java` (pending) | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `LinkedStack`). |
+| `LinkedQueueReverseTest.java` (pending) | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `reverse()`). |
+| `README.md` | Raul, Ruhaan | Raul: drafted with GenAI (Claude). Ruhaan: How to run section and this table, drafted with Claude Code; commands were run before writing them down. |
 
 ## GenAI note
 
 **Raul:** I completed the mayorty of the classes that where corresponded to me, after doing an initial version I gave Claude the files that I wrote and told it to give me what I had done wrong and how to fix it, after reviewed I commited the changes.
 
-**Ruhaan:** [How you used GenAI, or "I didn't use GenAI for this deliverable."]
+**Ruhaan:** I tried to write most of my classes myself and used GenAI mainly as a debugging tool. For this deliverable I used Claude Code to add the Reverse card to `Card`, check that `ConsoleView` and `GameSnapshot` still work with the real model, write `CardTest`, `GameSnapshotTest`, `ConsoleViewTest` and the pending `LinkedStackTest`/`LinkedQueueReverseTest`, and draft the How to run section and attribution table. I ran the tests and the program before committing.
 
-**Toby:** [How you used GenAI, or "I didn't use GenAI for this deliverable."]
+**Toby:** [owner fills in]
