@@ -58,10 +58,10 @@ the end of the run command above.
 
 | Package | Classes |
 | --- | --- |
-| `turnabout.model` | `LinkedQueue`, `Card`, `CardColor`, `Deck`, `Player`, `GameModel`, `GameSnapshot`, `MoveResult`, `GameListener` |
+| `turnabout.model` | `LinkedQueue`, `LinkedStack` ,`Card`, `CardColor`, `Deck`, `Player`, `GameModel`, `GameSnapshot`, `MoveResult`, `GameListener` |
 | `turnabout.view` | `ConsoleView` |
 | `turnabout.controller` | `GameController`, `TurnaboutMain` |
-| Tests (`test/turnabout/model`) | `LinkedQueueTest`, `DeckTest`, `PlayerTest`, `GameModelTest`, `CardTest`, `GameSnapshotTest` |
+| Tests (`test/turnabout/model`) | `LinkedQueueTest`, `DeckTest`, `PlayerTest`, `GameModelTest`, `CardTest`, `GameSnapshotTest`,  `DeckReverseTest`, `GameModelReverseTest` |
 | Tests (`test/turnabout/view`) | `ConsoleViewTest` |
 | Pending tests (`test-pending/turnabout/model`) | `LinkedStackTest`, `LinkedQueueReverseTest` |
 
@@ -71,30 +71,75 @@ through `GameListener.gameChanged(GameSnapshot)`, and only ever sees a
 read-only `GameSnapshot`.
 
 ## Reflection
+### How did our design absorb the change?
 
-### What changed from our specification?
+The Reverse card touched six model classes. This list comes from
+`git diff 9a7ec49` (the last commit before the Reverse work started) over `src/`:
 
-- **Packages.** The spec didn't name packages. We split the code into
-  `turnabout.model`, `turnabout.view`, and `turnabout.controller` so the
-  model/view line is visible in the imports.
-- **`Card` gained `getColor()` and `getNumber()`** so the view can print a card.
-- **`Card.matches(null)` returns false** instead of throwing
-  IllegalArgumentException as the spec said. The model never passes null, so
-  this doesn't change how the game plays.
-- **`GameSnapshot` getters are `getCurrentName()` and `getNextName()`**
-  instead of `getCurrentPlayerName()` / `getNextPlayerName()`, and its
-  constructor rejects null values.
-- **`GameModel` gained `isValidPlayerCount(int)`, `getPlayerCount()`,
-  `isGameOver()`, and `getWinnerName()`.** The controller needs the first two
-  to re-prompt for the player count and names without repeating the rule; the
-  model still owns the rule.
-- **`ConsoleView` reads with a `Scanner` and `readLine(String prompt)`**
-  instead of a `BufferedReader` and `readLine()`. Taking a prompt keeps the
-  question and the typing on the same line.
-- **`Deck.topCard()` returns null before the first discard.** This can't
-  happen during a game, because `startGame()` always flips a starting card.
-- **Tests:** the plan in Section 7 is covered for `LinkedQueue`, `Deck`,
-  `Player`, and `GameModel`. `Card` has no tests yet (see below).
+| Class | Owner | What changed |
+| --- | --- | --- |
+| `Card` | Ruhaan | `Card.reverse(color)` factory, `isReverse()`, Reverse matching rules, `toString()` like `RED REVERSE` |
+| `LinkedStack` | Raul | **New class**: our own linked stack (`push`, `pop`, `peek`, `isEmpty`, `size`) |
+| `LinkedQueue` | Raul | New `reverse()`, which pours the queue into a `LinkedStack` and back |
+| `MoveResult` | Raul | New value `REVERSED` |
+| `Deck` | Raul | Standard deck is 44 cards (one Reverse per color); `Deck.standard(Random)` factory; `REVERSES_PER_COLOR` and `STANDARD_SIZE` constants |
+| `GameModel` | Raul | `playCard` reverses the waiting players before passing the turn and returns `REVERSED` |
+
+Unchanged: `GameSnapshot`, `GameListener`, `Player`, `CardColor`,
+`ConsoleView`, `GameController`, `TurnaboutMain`.
+
+**Compared with our Deliverable 3 prediction:**
+
+- **Matched:** `LinkedQueue`, `Card`, `Deck`, and `GameModel` changed, as
+  predicted. `GameController`, `TurnaboutMain`, `GameListener`,
+  `GameSnapshot`, `Player`, and `CardColor` did not change, as predicted.
+- **Did not match:**
+    - `MoveResult` changed; we predicted it wouldn't. We added `REVERSED`
+      so the controller can tell a Reverse apart from a normal play.
+    - `LinkedStack` is a new class. The prediction said `reverse()` would use
+      "a stack we write" but didn't list it as a class.
+    - `ConsoleView` did **not** change; we predicted a small change. It
+      prints cards with `toString()`, and `Card.toString()` already returns
+      `RED REVERSE`.
+    - We predicted the matching rule would change in `GameModel`. It changed
+      in `Card.matches()` instead; `GameModel`'s legality check is the same.
+- [fill in: what surprised the team]
+
+### Did the change cross the model/view line?
+
+No. `ConsoleView.java` and `GameSnapshot.java` have no changes since
+`9a7ec49` (`git diff` is empty for both). No class in `turnabout.model`
+imports or mentions `turnabout.view`, `turnabout.controller`, `ConsoleView`,
+or `GameController` (checked with `grep`). The view didn't have to learn
+anything new: a Reverse card reaches it as an ordinary `Card` inside the
+`GameSnapshot`. The only new thing that leaves the model is the
+`MoveResult.REVERSED` value, which goes to the controller, not the view.
+
+### What changed from our Deliverable 3 plan?
+
+- **44-card deck:** one Reverse card per color. The plan didn't fix a number.
+- **Reverse cards are made with `Card.reverse(color)`** and checked with
+  `isReverse()`.
+- **`MoveResult.REVERSED` was added**, although the plan said `MoveResult`
+  wouldn't change.
+- **With 2 players, a Reverse is played normally and the other player goes
+  next.** The plan left open whether it would act as a skip; reversing a line
+  of one waiting player changes nothing, so we kept that.
+- **A Reverse flipped as the first top card is just a normal top card.** The
+  order isn't reversed at the start.
+- **A Reverse played as your last card wins** (`WON`), and the order is not
+  reversed.
+- **`LinkedQueue.reverse()` uses `LinkedStack`:** every item is dequeued onto
+  the stack, then popped back in. It only uses `enqueue` and `dequeue`, so
+  `head`, `tail`, and `size` stay correct. This answers the unknown we left
+  open in Deliverable 3.
+- **`Deck.standard(Random)`** was added; the old `Deck(Random)` constructor
+  still builds the same 44-card deck, so `TurnaboutMain` didn't change.
+- **Tests:** the plan gave the new tests to Toby. Ruhaan wrote
+  `LinkedStackTest`, `LinkedQueueReverseTest`, `CardTest`,
+  `GameSnapshotTest`, and `ConsoleViewTest`; Raul added `DeckReverseTest`
+  and `GameModelReverseTest` for the Deck and `GameModel` changes.
+
 
 
 ### Did the model really stand alone?
@@ -116,16 +161,17 @@ had to move across the model/view line to make the game run.
 
 ### What doesn't work yet?
 
-- The Reverse card is not built yet (planned for Deliverable 4).
-- After a move, the result message ("Card played.") prints below the next
-  player's board instead of above it. The model notifies the view during
-  `playCard`/`drawCard`, before the controller shows its message.
-- **No tests for `Card` yet.** Section 7 of the spec planned tests for the
-  `Card` constructor and `Card.matches`.
-- All 41 existing tests pass. The MVP path works: games with 2, 4, and 6
-  players play to a winner, and every bad-input case from the spec is
-  handled (bad player counts, blank/duplicate/long names, letters, card
-  numbers outside the hand, illegal plays, and closing input mid-game).
+- **The player isn't told when a Reverse flips the order.**
+  `GameController.show()` has no `REVERSED` case, so no message prints; the
+  board does show the new order.
+- **The illegal-play message says "must match the top card by color or
+  number",** which is not quite right for a Reverse card (a Reverse matches by
+  color or another Reverse).
+- **The result message still prints below the next player's board** instead
+  of above it (carried over from Deliverable 3).
+- **`LinkedStackTest` and `LinkedQueueReverseTest` are still in
+  `test-pending/`.** They compile and pass now, so they can move to
+  `test/turnabout/model/` and join the run command.
 
 ## Next Steps
 
@@ -207,12 +253,15 @@ One row per class and test file. Each owner fills in their own How column.
 
 | File | Who | How |
 | --- | --- | --- |
-| `LinkedQueue.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `Player.java` | Raul |GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `Deck.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `GameModel.java` | Raul, Ruhaan | GenAI-assisted: Did the version originaly myself (Raul) and then revied with claude. Ruhaan added `getPlayerCount`, `isValidPlayerCount`, `isGameOver`, `getWinnerName`|
-| `MoveResult.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `GameListener.java` | Raul | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `LinkedQueue.java` | Raul | GenAI-assisted. Deliverable 3: first version written by Claude from our spec; Raul committed it. Deliverable 4: `reverse()` written by Claude from our contract, using `LinkedStack`. Raul: [fill in what you reviewed or changed] |
+| `Player.java` | Raul | GenAI-assisted. Deliverable 3: written by Claude from our spec; Raul committed it. No changes in Deliverable 4. |
+| `Deck.java` | Raul | GenAI-assisted. Deliverable 3: written by Claude from our spec; Raul committed it. Deliverable 4: 44-card deck, `standard(Random)`, and constants written by Claude from our contract. Raul: [fill in what you reviewed or changed] |
+| `GameModel.java` | Raul, Ruhaan | GenAI-assisted. Deliverable 3: written by Claude from our spec; Raul committed it; Ruhaan added `getPlayerCount`, `isValidPlayerCount`, `isGameOver`, `getWinnerName`. Deliverable 4: the Reverse rule in `playCard` written by Claude from our contract. Raul: [fill in what you reviewed or changed] |
+| `MoveResult.java` | Raul | GenAI-assisted. Deliverable 3: written by Claude from our spec; Raul committed it. Deliverable 4: `REVERSED` added by Claude. |
+| `GameListener.java` | Raul | GenAI-assisted. Deliverable 3: written by Claude from our spec; Raul committed it. No changes in Deliverable 4. |
+| `LinkedStack.java` | Raul | GenAI-assisted. New in Deliverable 4: written by Claude from our contract. Raul: [fill in what you reviewed or changed] |
+| `DeckReverseTest.java` | Raul | GenAI-assisted: written by Claude for the 44-card deck; 6 tests, all pass. Raul: [fill in what you reviewed or ran] |
+| `GameModelReverseTest.java` | Raul | GenAI-assisted: written by Claude for the Reverse rule in `playCard`; 13 tests (normal and bad input), all pass. Raul: [fill in what you reviewed or ran] |
 | `CardColor.java` | Ruhaan | Wrote fully myself. |
 | `Card.java` | Ruhaan | GenAI-assisted. Mostly finished myself, then had AI debug one function I couldn't get to work. The Reverse card (`reverse`, `isReverse`, the Reverse `matches` rules, `toString`) was added with Claude Code from our contract. |
 | `GameSnapshot.java` | Ruhaan | GenAI-assisted. Wrote myself, then had AI check it. Something I did didn't match what we agreed, so AI helped fix it. |
@@ -226,10 +275,9 @@ One row per class and test file. Each owner fills in their own How column.
 | `CardTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
 | `GameSnapshotTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
 | `ConsoleViewTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
-| `LinkedStackTest.java` (pending) | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `LinkedStack`). |
-| `LinkedQueueReverseTest.java` (pending) | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `reverse()`). |
+| `LinkedStackTest.java`  | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `LinkedStack`). |
+| `LinkedQueueReverseTest.java`  | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `reverse()`). |
 | `README.md` | Raul, Ruhaan | Raul: drafted with GenAI (Claude). Ruhaan: How to run section and this table, drafted with Claude Code; commands were run before writing them down. |
-
 ## GenAI note
 
 **Raul:** I completed the mayorty of the classes that where corresponded to me, after doing an initial version I gave Claude the files that I wrote and told it to give me what I had done wrong and how to fix it, after reviewed I commited the changes.
