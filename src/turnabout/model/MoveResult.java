@@ -4,6 +4,12 @@ package turnabout.model;
 public enum MoveResult {
     /** A card was played and the turn passed. */
     PLAYED,
+    /**
+     * A Reverse card was played: the order of play flipped and the turn passed
+     * to the player who went before. With 2 players the order looks the same,
+     * so the other player goes next. Not returned if it was the last card (WON).
+     */
+    REVERSED,
     /** A card was played and that player's hand is now empty. The game is over. */
     WON,
     /** The player drew a card and the turn passed. */
