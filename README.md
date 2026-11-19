@@ -217,12 +217,12 @@ One row per class and test file. Each owner fills in their own How column.
 | `Card.java` | Ruhaan | GenAI-assisted. Mostly finished myself, then had AI debug one function I couldn't get to work. The Reverse card (`reverse`, `isReverse`, the Reverse `matches` rules, `toString`) was added with Claude Code from our contract. |
 | `GameSnapshot.java` | Ruhaan | GenAI-assisted. Wrote myself, then had AI check it. Something I did didn't match what we agreed, so AI helped fix it. |
 | `ConsoleView.java` | Ruhaan | GenAI-assisted. Did the version originally myself, then fixed it up with Claude. Checked with Claude Code against the real model and controller for Deliverable 4: no changes needed. |
-| `GameController.java` | Toby | [owner fills in] |
-| `TurnaboutMain.java` | Toby | [owner fills in] |
-| `LinkedQueueTest.java` | Toby | [owner fills in] |
-| `DeckTest.java` | Toby | [owner fills in] |
-| `PlayerTest.java` | Toby | [owner fills in] |
-| `GameModelTest.java` | Toby | [owner fills in] |
+| `GameController.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `TurnaboutMain.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `LinkedQueueTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `DeckTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `PlayerTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `GameModelTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
 | `CardTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
 | `GameSnapshotTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
 | `ConsoleViewTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
