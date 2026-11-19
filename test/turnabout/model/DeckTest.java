@@ -28,16 +28,33 @@ public class DeckTest extends TestCase {
         assertNull(d.draw());
     }
 
-    public void testStandardDeckHas40DistinctCards() {
+    public void testStandardDeckHas44Cards() {
         Deck d = new Deck(new Random(7));
+        int numbers = 0;
+        int reverses = 0;
         Set<String> seen = new HashSet<>();
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 44; i++) {
             Card card = d.draw();
             assertNotNull(card);
             seen.add(card.toString());
+            if (card.isReverse()) {
+                reverses++;
+            } else {
+                numbers++;
+            }
         }
-        assertEquals(40, seen.size());
+        assertEquals(40, numbers);
+        assertEquals(4, reverses);
+        assertEquals(44, seen.size());
         assertNull(d.draw());
+    }
+
+    public void testSameSeedGivesSameOrder() {
+        Deck one = new Deck(new Random(42));
+        Deck two = new Deck(new Random(42));
+        for (int i = 0; i < 44; i++) {
+            assertEquals(one.draw().toString(), two.draw().toString());
+        }
     }
 
     public void testTopCardEmptyThenDiscard() {

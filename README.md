@@ -33,10 +33,10 @@ The tests use the course's `student.TestCase`, which comes in `student.jar`
 
 ```
 javac -d out -cp student.jar $(find src test -name "*.java")
-java -cp out:student.jar org.junit.runner.JUnitCore turnabout.model.LinkedQueueTest turnabout.model.DeckTest turnabout.model.PlayerTest turnabout.model.GameModelTest turnabout.model.CardTest turnabout.model.GameSnapshotTest turnabout.view.ConsoleViewTest
+java -cp out:student.jar org.junit.runner.JUnitCore turnabout.model.LinkedQueueTest turnabout.model.DeckTest turnabout.model.PlayerTest turnabout.model.GameModelTest turnabout.model.CardTest turnabout.model.GameSnapshotTest turnabout.view.ConsoleViewTest turnabout.model.LinkedStackTest turnabout.model.LinkedQueueReverseTest turnabout.model.DeckReverseTest turnabout.model.GameModelReverseTest turnabout.controller.GameControllerTest turnabout.controller.TurnaboutMainTest
 ```
 
-This runs 73 tests and ends with `OK (73 tests)`. The `WARNING: ...
+This runs 118 tests and ends with `OK (118 tests)`. The `WARNING: ...
 setSecurityManager` lines come from `student.jar` on newer Java and can be
 ignored. On Windows, use `;` instead of `:` in the `-cp` value.
 
@@ -45,14 +45,10 @@ and never create a `ConsoleView`. This shows the model runs on its own.
 `ConsoleViewTest` drives the view with a `Scanner` over a fixed string and a
 `PrintStream` over a byte buffer.
 
-**Tests waiting on `LinkedStack` and `LinkedQueue.reverse()`**
-
-`test-pending/turnabout/model/` holds `LinkedStackTest` and
-`LinkedQueueReverseTest`. They are written against the contract but do not
-compile until `LinkedStack` and `LinkedQueue.reverse()` are pushed. Once they
-are, move both files into `test/turnabout/model/` and add
-`turnabout.model.LinkedStackTest turnabout.model.LinkedQueueReverseTest` to
-the end of the run command above.
+**Repeatable game.** `java -cp out turnabout.controller.TurnaboutMain 25`
+(an optional number) seeds the shuffle, so the same game is dealt every time.
+`demo/demo-input.txt` is a scripted run of that seeded game; see "The
+3-minute demo path" under Next Steps.
 
 ## Project structure
 
@@ -63,7 +59,6 @@ the end of the run command above.
 | `turnabout.controller` | `GameController`, `TurnaboutMain` |
 | Tests (`test/turnabout/model`) | `LinkedQueueTest`, `DeckTest`, `PlayerTest`, `GameModelTest`, `CardTest`, `GameSnapshotTest`,  `DeckReverseTest`, `GameModelReverseTest` |
 | Tests (`test/turnabout/view`) | `ConsoleViewTest` |
-| Pending tests (`test-pending/turnabout/model`) | `LinkedStackTest`, `LinkedQueueReverseTest` |
 
 Nothing in `turnabout.model` imports `turnabout.view` or
 `turnabout.controller`, so the model never depends on the view. The view learns about changes
@@ -161,29 +156,52 @@ had to move across the model/view line to make the game run.
 
 ### What doesn't work yet?
 
-- **The player isn't told when a Reverse flips the order.**
-  `GameController.show()` has no `REVERSED` case, so no message prints; the
-  board does show the new order.
 - **The illegal-play message says "must match the top card by color or
   number",** which is not quite right for a Reverse card (a Reverse matches by
   color or another Reverse).
 - **The result message still prints below the next player's board** instead
   of above it (carried over from Deliverable 3).
-- **`LinkedStackTest` and `LinkedQueueReverseTest` are still in
-  `test-pending/`.** They compile and pass now, so they can move to
-  `test/turnabout/model/` and join the run command.
 
 ## Next Steps
 
-### What is left to finish the MVP?
+Written by Toby after running everything. Facts come first; anything marked
+**[team decides]** or **[team confirms]** is a proposal, not a decision.
 
-In order:
+### Where the build stands (facts)
 
-The MVP plays from start to winner, so what's left is polish:
+- The game runs from setup to a win and a "Play again?" prompt through
+  `TurnaboutMain`, with Reverse working. A scripted run is in `demo/`.
+- **118 tests, all pass.** Before Toby's changes 1 failed: `DeckTest` still
+  expected a 40-card deck, but the deck now has 44 (40 number + 4 Reverse).
+  It now checks 44 cards and that the same seed gives the same order.
+- `GameController` now has a message for `REVERSED` ("Direction reversed!"),
+  prints no second winner line on `WON`, and re-prompts on every bad input:
+  letters or blank at a card choice, a number outside the hand, a card that
+  doesn't match, a player count that isn't 2 to 6, blank / duplicate /
+  over-20-character names, and Ctrl+D (ends with "Goodbye!", no stack trace).
+- `LinkedStackTest` and `LinkedQueueReverseTest` moved out of `test-pending/`
+  into `test/turnabout/model/`; both pass against Raul's `LinkedStack` and
+  `reverse()`.
+- **Not verified against the real `student.jar`.** It is not in the repo and
+  Toby didn't have it, so the tests were run with JUnit 4.13.2 and a
+  one-line stand-in for `student.TestCase`. Someone with `student.jar`
+  should re-run the command in How to run.
+- `PlayerTest` covers the real `Player` API (`addCard`, `removeCard`, and
+  `getHand` is read-only). `Player` has no `getCard`, `playCard` or
+  `handSize`, so there are no tests for those.
 
-1. Show the result message ("Card played.") before the next player's board.
-2. Add `CardTest` for the constructor and `matches()`.
-3. Play-test again after both changes.
+### What is left for the final build, in order
+
+1. **Result message prints below the next board** (still open, see "What
+   doesn't work yet"). Cause: the model notifies the view inside
+   `playCard`, before the controller can print its message. Proposal
+   [team decides]: have the view print the board only when the controller
+   asks for it, or have the message travel in the snapshot.
+2. **Re-run the tests with the real `student.jar`** and fix anything that
+   differs.
+3. **Stretch goal work, if any is committed** (next section).
+4. **Final play-test** of the demo path below on the machine we present from.
+5. **Finish the attribution table:** Raul still has `[fill in ...]` cells.
 
 ### Our change feature: the Reverse card
 
@@ -215,37 +233,55 @@ Reverse acts as a skip in that case.
 "play the card at index i", so the controller and the snapshot don't change.
 If any of these do change, we will explain why in Deliverable 4.
 
-### Which stretch goals will we attempt?
+### Stretch goals (from the scope)
 
+| Goal | Proposal | Reason |
+| --- | --- | --- |
+| Skip card | Committed [team decides] | Reuses the turn-passing code. Needs a new `MoveResult`; `GameControllerTest` fails until `messageFor` handles it, which is the intended reminder. |
+| Draw Two card | Dropped [team decides] | Needs a draw-penalty rule and another new result; no time. |
+| Swing view | Dropped [team decides] | A whole new view class; the console view meets the spec. |
+| Leaving mid-game | Dropped [team decides] | Today Ctrl+D ends the whole game; removing one player from the queue needs new model code and tests. |
 
+### The 3-minute demo path
 
-- **Committing to:** Skip card. It reuses the turn-passing code, so it is
-  small once Reverse works.
-- **Dropping:** Graphical (Swing) view, Draw Two card, and leaving mid-game,
-  to keep time for the change feature and its tests.
+Run on Windows with Java 26, from the project folder. Compile, then start the
+seeded game (on Windows use `;` instead of `:` in a `-cp` that lists several
+paths; this one has only `out`):
 
-### What new tests will we need?
+```
+javac -d out $(find src -name "*.java")
+java -cp out turnabout.controller.TurnaboutMain 25
+```
 
-- `LinkedQueue.reverse()`: on an empty queue, a one-item queue, and a
-  four-item queue (order is reversed, and `tail` is correct: enqueuing after
-  reversing puts the item at the true back).
-- `Card`: a Reverse card matches the same color and another Reverse card,
-  and doesn't match a different color.
-- `GameModel.playCard` with Reverse: with 4 players the next player becomes
-  the one who went before; with 2 players, the agreed behavior.
-- Bad input: playing a Reverse card that doesn't match the top card returns
-  `ILLEGAL_PLAY` and leaves the turn order unchanged.
+Type these, one per line. The same inputs piped from
+`demo/demo-input.txt` were run and ended with "Ana wins!".
 
-### Who does what?
+1. **Set up players.** Type `9`: "Please enter a number from 2 to 6." Type
+   `3`. Names: `Ana`, then `ana` (rejected: already taken), then `Ben`,
+   `Cy`.
+2. **Show a bad input.** Ana's board shows top card GREEN 9 and her hand.
+   Type `abc`: "Please type a card number, or D to draw." Type `9`: "No card
+   with that number in your hand." It is still Ana's turn.
+3. **A normal turn.** Type `2` (GREEN 0, matches by color). The board moves
+   to Ben; the order is Ben, Cy, Ana ("Up next: Cy").
+4. **The new feature.** Ben types `4` (GREEN REVERSE): "Direction reversed!"
+   and the next turn is **Ana**, who went before him, not Cy.
+5. **Keep playing.** Type `4`, `d`, `d`, `1`, `d`, `1`, `2`, `2`, `1`, `1`.
+   This includes draws (`d`) and a second Reverse.
+6. **Finish with a win.** Ana plays her last card: "Ana wins!" prints once.
+   Type `n` at "Play again?" and the program prints "Goodbye!".
+
+### Who does what for the remaining items [team confirms]
 
 | Item | Owner |
 | --- | --- |
-| `LinkedQueue.reverse()` and the Reverse rule in `GameModel` | Raul |
-| Reverse cards in `Deck` | Raul |
-| Reverse in `Card` | Ruhaan |
-| Printing Reverse cards in `ConsoleView` | Ruhaan |
-| New tests listed above | Toby |
-| Remaining MVP fixes | Raul |
+| Message-before-board fix (item 1) | Toby (controller) with Ruhaan (view) |
+| Re-run tests with real `student.jar` | Ruhaan |
+| Skip card: `Card`, `Deck`, `GameModel`, `MoveResult` | Raul |
+| Skip card: printing it in `ConsoleView` | Ruhaan |
+| Skip card: `messageFor` and controller/model tests | Toby |
+| Final play-test of the demo path | Toby |
+| Fill in the remaining attribution cells | Raul |
 
 ## Attribution
 
@@ -266,17 +302,20 @@ One row per class and test file. Each owner fills in their own How column.
 | `Card.java` | Ruhaan | GenAI-assisted. Mostly finished myself, then had AI debug one function I couldn't get to work. The Reverse card (`reverse`, `isReverse`, the Reverse `matches` rules, `toString`) was added with Claude Code from our contract. |
 | `GameSnapshot.java` | Ruhaan | GenAI-assisted. Wrote myself, then had AI check it. Something I did didn't match what we agreed, so AI helped fix it. |
 | `ConsoleView.java` | Ruhaan | GenAI-assisted. Did the version originally myself, then fixed it up with Claude. Checked with Claude Code against the real model and controller for Deliverable 4: no changes needed. |
-| `GameController.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `TurnaboutMain.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
+| `GameController.java` | Toby | GenAI-assisted: Deliverable 4: `REVERSED` message, `parseNumber` and `messageFor` helpers, no second winner line, re-prompts on bad input, Ctrl+D. Written with Claude Code; I ran it with piped input. |
+| `TurnaboutMain.java` | Toby | GenAI-assisted: Deliverable 4: play-again loop, `play(Scanner, PrintStream, Random)` so it can be tested, optional seed argument. Written with Claude Code; I ran the scripted demo. |
+| `DeckTest.java` | Toby | GenAI-assisted: Deliverable 4: fixed the 40-card test to 44 cards (40 number, 4 Reverse), added same-seed test. Written with Claude Code; tests pass. |
+| `GameModelTest.java` | Toby | GenAI-assisted: Deliverable 4: renamed the recording listener `FakeListener`, added the 3-player turn rotation test. Written with Claude Code; tests pass. |
+| `GameControllerTest.java` | Toby | GenAI-assisted: new in Deliverable 4: `parseNumber`, `messageFor` for every result, scripted runs (win, bad input, illegal play, Ctrl+D, Reverse). Written with Claude Code; tests pass. |
+| `TurnaboutMainTest.java` | Toby | GenAI-assisted: new in Deliverable 4: smoke test of `play` with the real random deck. Written with Claude Code; tests pass. |
+| `demo/demo-input.txt` | Toby | GenAI-assisted: scripted input for seed 25 (bad inputs, two Reverses, a win), found with a small throwaway bot written with Claude Code; I ran it. |
 | `LinkedQueueTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `DeckTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
 | `PlayerTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
-| `GameModelTest.java` | Toby | GenAI-assisted: Did the version originaly myself and then revied with claude  |
 | `CardTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
 | `GameSnapshotTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
 | `ConsoleViewTest.java` | Ruhaan | GenAI-assisted: written with Claude Code from our contract; I ran them. |
-| `LinkedStackTest.java`  | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `LinkedStack`). |
-| `LinkedQueueReverseTest.java`  | Ruhaan | GenAI-assisted: written with Claude Code from our contract; not run yet (waiting on `reverse()`). |
+| `LinkedStackTest.java`  | Ruhaan | GenAI-assisted: written with Claude Code from our contract; now in `test/` and passing against `LinkedStack`. |
+| `LinkedQueueReverseTest.java`  | Ruhaan | GenAI-assisted: written with Claude Code from our contract; now in `test/` and passing against `reverse()`. |
 | `README.md` | Raul, Ruhaan | Raul: drafted with GenAI (Claude). Ruhaan: How to run section and this table, drafted with Claude Code; commands were run before writing them down. |
 ## GenAI note
 
@@ -284,4 +323,4 @@ One row per class and test file. Each owner fills in their own How column.
 
 **Ruhaan:** I tried to write most of my classes myself and used GenAI mainly as a debugging tool. For this deliverable I used Claude Code to add the Reverse card to `Card`, check that `ConsoleView` and `GameSnapshot` still work with the real model, write `CardTest`, `GameSnapshotTest`, `ConsoleViewTest` and the pending `LinkedStackTest`/`LinkedQueueReverseTest`, and draft the How to run section and attribution table. I ran the tests and the program before committing.
 
-**Toby:** [owner fills in]
+**Toby:** I used Claude Code (Sonnet 5.5) to finish `GameController` and `TurnaboutMain` (REVERSED message, no double winner line, input re-prompts, Ctrl+D, play again, optional seed), update `DeckTest` and `GameModelTest`, write `GameControllerTest` and `TurnaboutMainTest`, and draft the Next Steps section. I read the generated code and the test output; I ran the full suite and the scripted demo before committing. I did not have `student.jar`, so I ran the tests with JUnit 4.13.2 and a stand-in `student.TestCase`.

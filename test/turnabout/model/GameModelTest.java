@@ -7,7 +7,7 @@ import student.TestCase;
 
 public class GameModelTest extends TestCase {
     /** Saves every snapshot it is sent. */
-    private static class Recorder implements GameListener {
+    private static class FakeListener implements GameListener {
         final List<GameSnapshot> snaps = new ArrayList<>();
 
         public void gameChanged(GameSnapshot s) {
@@ -16,7 +16,7 @@ public class GameModelTest extends TestCase {
     }
 
     private GameModel model;
-    private Recorder rec;
+    private FakeListener rec;
 
     private static Card card(CardColor color, int n) {
         return new Card(color, n);
@@ -38,7 +38,7 @@ public class GameModelTest extends TestCase {
             order.add(e);
         }
         GameModel m = new GameModel(new Deck(order, new Random(1)));
-        rec = new Recorder();
+        rec = new FakeListener();
         m.addListener(rec);
         m.addPlayer("Ana");
         m.addPlayer("Ben");
@@ -61,7 +61,7 @@ public class GameModelTest extends TestCase {
 
     public void testEveryListenerGetsEverySnapshot() {
         GameModel m = game(card(CardColor.RED, 9), card(CardColor.GREEN, 0));
-        Recorder second = new Recorder();
+        FakeListener second = new FakeListener();
         m.addListener(second);
         m.startGame();
         m.drawCard("Ana");
@@ -257,5 +257,32 @@ public class GameModelTest extends TestCase {
         model = started(card(CardColor.RED, 9));
         assertNull(model.getWinnerName());
         assertFalse(model.isGameOver());
+    }
+
+    public void testTurnOrderRotatesThroughThreePlayers() {
+        List<Card> order = new ArrayList<>();
+        for (int n = 1; n <= 5; n++) {
+            order.add(card(CardColor.RED, n));
+            order.add(card(CardColor.BLUE, n));
+            order.add(card(CardColor.GREEN, n));
+        }
+        order.add(card(CardColor.RED, 9));
+        GameModel m = new GameModel(new Deck(order, new Random(1)));
+        m.addPlayer("Ana");
+        m.addPlayer("Ben");
+        m.addPlayer("Cy");
+        m.startGame();
+        assertEquals("Ana", m.getSnapshot().getCurrentName());
+        assertEquals("Ben", m.getSnapshot().getNextName());
+        // each plays his first card: RED 1 (color), BLUE 1 and GREEN 1 (number)
+        assertEquals(MoveResult.PLAYED, m.playCard("Ana", 0));
+        assertEquals("Ben", m.getSnapshot().getCurrentName());
+        assertEquals("Cy", m.getSnapshot().getNextName());
+        assertEquals(MoveResult.PLAYED, m.playCard("Ben", 0));
+        assertEquals("Cy", m.getSnapshot().getCurrentName());
+        assertEquals("Ana", m.getSnapshot().getNextName());
+        assertEquals(MoveResult.PLAYED, m.playCard("Cy", 0));
+        assertEquals("Ana", m.getSnapshot().getCurrentName());
+        assertEquals("Ben", m.getSnapshot().getNextName());
     }
 }

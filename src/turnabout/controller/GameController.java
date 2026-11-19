@@ -24,26 +24,26 @@ public class GameController {
     /** Runs setup, then the turn loop. Returns when someone wins or input closes. */
     public void run() {
         if (!setup()) {
-            view.showMessage("Game ended");
+            view.showMessage("Input closed.");
             return;
         }
         while (model.isActive()) {
             String name = model.getSnapshot().getCurrentName();
             String line = view.readLine(name + ", enter a card number, or D to draw: ");
             if (line == null) {
-                view.showMessage("Game ended");
+                view.showMessage("Input closed.");
                 return;
             }
             line = line.trim();
-            if (line.equalsIgnoreCase("D")) {
+            if (line.equalsIgnoreCase("D") || line.equalsIgnoreCase("draw")) {
                 show(model.drawCard(name));
                 continue;
             }
             int number;
             try {
-                number = Integer.parseInt(line);
+                number = parseNumber(line);
             } catch (NumberFormatException e) {
-                view.showMessage("Please type a card number or D.");
+                view.showMessage("Please type a card number, or D to draw.");
                 continue;
             }
             show(model.playCard(name, number - 1)); // screen is 1-based, model is 0-based
@@ -60,7 +60,7 @@ public class GameController {
                 return false;
             }
             try {
-                count = Integer.parseInt(line.trim());
+                count = parseNumber(line);
             } catch (NumberFormatException e) {
                 count = 0;
             }
@@ -85,30 +85,44 @@ public class GameController {
     }
 
     private void show(MoveResult result) {
+        String text = messageFor(result);
+        if (text != null) {
+            view.showMessage(text);
+        }
+    }
+
+    /**
+     * Parses a typed number.
+     * @throws NumberFormatException if text is null, blank, or not a whole number
+     */
+    static int parseNumber(String text) {
+        if (text == null) {
+            throw new NumberFormatException("No input");
+        }
+        return Integer.parseInt(text.trim());
+    }
+
+    /** The message for a move result, or null for WON (the view already prints "X wins!"). */
+    static String messageFor(MoveResult result) {
         switch (result) {
             case PLAYED:
-                view.showMessage("Card played.");
-                break;
+                return "Card played.";
+            case REVERSED:
+                return "Direction reversed!";
             case DREW:
-                view.showMessage("You drew a card.");
-                break;
+                return "You drew a card.";
             case NOTHING_TO_DRAW:
-                view.showMessage("No cards left to draw. Turn passes.");
-                break;
+                return "No cards left to draw. Turn passes.";
             case NOT_YOUR_TURN:
-                view.showMessage("It is not your turn.");
-                break;
+                return "It is not your turn.";
             case ILLEGAL_PLAY:
-                view.showMessage("That card must match the top card by color or number.");
-                break;
+                return "That card must match the top card by color or number (a Reverse matches a Reverse).";
             case BAD_INDEX:
-                view.showMessage("No card with that number in your hand.");
-                break;
+                return "No card with that number in your hand.";
             case GAME_NOT_ACTIVE:
-                view.showMessage("The game is not active.");
-                break;
-            case WON:
-                break; // the view already prints "<name> wins!"
+                return "The game is not active.";
+            default: // WON
+                return null;
         }
     }
 }
