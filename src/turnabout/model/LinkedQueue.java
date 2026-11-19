@@ -68,6 +68,25 @@ public class LinkedQueue<T> {
         return head.value;
     }
 
+    /**
+     * Reverses the queue in place: the back becomes the front.
+     * Every item is dequeued onto a LinkedStack, then popped back in, so the
+     * last item in comes out first. enqueue and dequeue keep head, tail and
+     * size correct. O(n). Does nothing on a queue with 0 or 1 items.
+     */
+    public void reverse() {
+        if (size < 2) {
+            return;
+        }
+        LinkedStack<T> stack = new LinkedStack<>();
+        while (!isEmpty()) {
+            stack.push(dequeue());
+        }
+        while (!stack.isEmpty()) {
+            enqueue(stack.pop());
+        }
+    }
+
     public boolean isEmpty() {
         return size == 0;
     }
